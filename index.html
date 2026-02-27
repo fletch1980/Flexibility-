@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flexibility Training</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0010; font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+var useState = React.useState;
+
+var phaseLabels = ["Weeks 1-4", "Weeks 5-8", "Weeks 9-12"];
+
+var dailyRoutine = [
+  {
+    name: "Hip Flexor Lunge Stretch",
+    area: "Hip Flexors",
+    emoji: "🔥",
+    holds: ["45 sec each side", "60 sec each side", "90 sec each side"],
+    sets: 2,
+    notes: "Low lunge, back knee on floor, sink hips forward and down. Keep chest tall. This is your most important stretch.",
+    tip: "Place hand on front knee for balance, reach opposite arm overhead for deeper stretch"
+  },
+  {
+    name: "Deep Butterfly",
+    area: "Inner Thighs & Groin",
+    emoji: "🦋",
+    holds: ["45 sec", "60 sec", "90 sec"],
+    sets: 2,
+    notes: "Seated, feet together, press knees toward floor with elbows. Sit tall, don't round your back.",
+    tip: "Weeks 5+: lean forward from hips over feet for deeper groin opening"
+  },
+  {
+    name: "Pigeon Pose",
+    area: "Hip External Rotation",
+    emoji: "🕊️",
+    holds: ["60 sec each side", "90 sec each side", "2 min each side"],
+    sets: 2,
+    notes: "Front shin as parallel to top of mat as possible. Hips square to floor. Breathe into the tightness — don't fight it.",
+    tip: "This is the single most impactful stretch for hip opening. Never skip it."
+  },
+  {
+    name: "Supine Figure 4",
+    area: "Hip External Rotation",
+    emoji: "4️⃣",
+    holds: ["45 sec each side", "60 sec each side", "90 sec each side"],
+    sets: 2,
+    notes: "On your back, cross ankle over opposite knee, pull both legs toward chest.",
+    tip: "Flex the foot of the crossed leg to protect your knee"
+  },
+  {
+    name: "Wide Leg Forward Fold",
+    area: "Inner Thighs & Hamstrings",
+    emoji: "🌊",
+    holds: ["45 sec", "60 sec", "90 sec"],
+    sets: 2,
+    notes: "Seated, legs wide, walk hands forward. Keep spine long — don't round. Feel the inner thigh and hamstring stretch.",
+    tip: "Weeks 5+: try to get chest toward floor, not just hands"
+  },
+  {
+    name: "Lizard Pose",
+    area: "Hip Flexors & Groin",
+    emoji: "🦎",
+    holds: ["45 sec each side", "60 sec each side", "90 sec each side"],
+    sets: 2,
+    notes: "Deep lunge with both hands inside front foot. Drop back knee to floor. This opens the deepest part of the hip flexor.",
+    tip: "Weeks 9+: try dropping forearms to floor for maximum depth"
+  },
+  {
+    name: "Supine Spinal Twist",
+    area: "Lower Back Mobility",
+    emoji: "🌀",
+    holds: ["30 sec each side", "45 sec each side", "60 sec each side"],
+    sets: 2,
+    notes: "On back, drop knees to one side while arms extend out. Keep shoulders flat on floor.",
+    tip: "Breathe deeply — each exhale lets you sink a little deeper"
+  },
+  {
+    name: "Deep Squat Hold",
+    area: "Hip Flexors & Groin",
+    emoji: "⬇️",
+    holds: ["45 sec", "60 sec", "90 sec"],
+    sets: 3,
+    notes: "Feet slightly wider than hips, toes turned out. Heels flat if possible. Press knees out with elbows.",
+    tip: "Hold onto a door frame or chair if heels won't stay flat — work toward flat heels over 12 weeks"
+  }
+];
+
+var fridaySession = [
+  {
+    name: "Hip Circle Warm Up",
+    area: "Full Hip Mobility",
+    emoji: "🌀",
+    holds: ["10 circles each direction", "15 circles each direction", "20 circles each direction"],
+    sets: 2,
+    notes: "Standing, hands on hips, make big slow circles. This primes everything for the deep work ahead.",
+    tip: "Make them as large as possible — don't be shy"
+  },
+  {
+    name: "Extended Pigeon Pose",
+    area: "Hip External Rotation",
+    emoji: "🕊️",
+    holds: ["2 min each side", "2.5 min each side", "3 min each side"],
+    sets: 2,
+    notes: "Longer hold than daily routine. Get comfortable being uncomfortable. This is where real opening happens.",
+    tip: "Use a folded blanket under your hip if it doesn't reach the floor"
+  },
+  {
+    name: "Frog Pose",
+    area: "Inner Thighs & Groin",
+    emoji: "🐸",
+    holds: ["60 sec", "90 sec", "2 min"],
+    sets: 2,
+    notes: "On all fours, slide knees apart as wide as comfortable, sink hips toward floor. One of the deepest groin openers.",
+    tip: "This will feel intense — breathe through it. The discomfort means it's working."
+  },
+  {
+    name: "Active Hip Flexor Stretch",
+    area: "Hip Flexors — Active",
+    emoji: "💪",
+    holds: ["10 reps each side", "12 reps each side", "15 reps each side"],
+    sets: 3,
+    notes: "Low lunge position — squeeze glute of back leg and tuck pelvis under. Hold 3 sec, release, repeat. This builds strength in the stretch.",
+    tip: "Active flexibility means you can control the position — this is what translates to real life"
+  },
+  {
+    name: "Straddle Forward Fold",
+    area: "Inner Thighs & Hamstrings",
+    emoji: "🌊",
+    holds: ["90 sec", "2 min", "2.5 min"],
+    sets: 2,
+    notes: "Seated legs as wide as possible, walk hands forward slowly. Never force — let gravity do the work over time.",
+    tip: "Weeks 9+: try pointing and flexing feet alternately while holding to deepen the stretch"
+  },
+  {
+    name: "Bridge Spine Wave",
+    area: "Lower Back Mobility",
+    emoji: "🌉",
+    holds: ["10 slow reps", "12 slow reps", "15 slow reps"],
+    sets: 3,
+    notes: "Lying on back, slowly peel spine off floor vertebra by vertebra into bridge, then roll back down the same way. Full spinal mobility.",
+    tip: "This directly trains the fluid spinal movement used during sex — do it slowly and feel each vertebra"
+  },
+  {
+    name: "Seated Figure 4 Forward Fold",
+    area: "Hip External Rotation — Deep",
+    emoji: "4️⃣",
+    holds: ["60 sec each side", "90 sec each side", "2 min each side"],
+    sets: 2,
+    notes: "Seated, cross ankle over knee in figure 4, then fold forward over the crossed leg. Extremely deep hip opener.",
+    tip: "Keep spine long as you fold — this is more effective than rounding your back"
+  },
+  {
+    name: "Happy Baby Pose",
+    area: "Inner Thighs & Lower Back",
+    emoji: "👶",
+    holds: ["60 sec", "90 sec", "2 min"],
+    sets: 2,
+    notes: "On back, grab outside edges of feet, knees toward armpits. Rock side to side gently. Opens everything at once.",
+    tip: "This is your reward pose — it should feel good. Let your lower back melt into the floor."
+  },
+  {
+    name: "Full Hip Wind Flow",
+    area: "Integration",
+    emoji: "✨",
+    holds: ["3 minutes", "4 minutes", "5 minutes"],
+    sets: 1,
+    notes: "Put on music. Move through everything — circles, figure 8s, hip winds, deep squats. This is where flexibility becomes movement.",
+    tip: "No rules here. Feel your body and enjoy what it can do."
+  }
+];
+
+function App() {
+  var stateTab = useState("daily");
+  var tab = stateTab[0]; var setTab = stateTab[1];
+  var statePhase = useState(0);
+  var phase = statePhase[0]; var setPhase = statePhase[1];
+  var stateChecked = useState({});
+  var checked = stateChecked[0]; var setChecked = stateChecked[1];
+
+  var exercises = tab === "daily" ? dailyRoutine : fridaySession;
+
+  function toggle(key) {
+    setChecked(function(p) {
+      var n = Object.assign({}, p);
+      n[key] = !p[key];
+      return n;
+    });
+  }
+
+  var done = exercises.filter(function(_, i) { return !!checked[tab + "-" + phase + "-" + i]; }).length;
+  var total = exercises.length;
+  var pct = (done / total) * 100;
+
+  return React.createElement("div", { style: { fontFamily: "system-ui, sans-serif", maxWidth: 460, margin: "0 auto", padding: 16, backgroundColor: "#0a0010", minHeight: "100vh" } },
+
+    React.createElement("div", { style: { background: "linear-gradient(135deg, #4a0080, #7c3aed)", borderRadius: 14, padding: "18px 20px", color: "white", marginBottom: 16 } },
+      React.createElement("div", { style: { fontSize: 22, fontWeight: 800 } }, "🌸 Flexibility Training"),
+      React.createElement("div", { style: { fontSize: 13, opacity: 0.9, marginTop: 2 } }, "Open · Flow · Feel Everything"),
+      React.createElement("div", { style: { marginTop: 10, background: "rgba(255,255,255,0.25)", borderRadius: 8, height: 8 } },
+        React.createElement("div", { style: { background: "white", borderRadius: 8, height: 8, width: pct + "%", transition: "width 0.3s" } })
+      ),
+      React.createElement("div", { style: { fontSize: 12, opacity: 0.85, marginTop: 4 } }, done + " of " + total + " complete")
+    ),
+
+    React.createElement("div", { style: { display: "flex", background: "#1a0030", borderRadius: 10, padding: 4, marginBottom: 16 } },
+      React.createElement("button", { onClick: function() { setTab("daily"); setChecked({}); }, style: { flex: 1, padding: 9, borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: tab === "daily" ? "#7c3aed" : "transparent", color: tab === "daily" ? "white" : "#9ca3af" } }, "🌙 Daily Routine"),
+      React.createElement("button", { onClick: function() { setTab("friday"); setChecked({}); }, style: { flex: 1, padding: 9, borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: tab === "friday" ? "#7c3aed" : "transparent", color: tab === "friday" ? "white" : "#9ca3af" } }, "✨ Deep Friday")
+    ),
+
+    React.createElement("div", { style: { marginBottom: 16 } },
+      React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#6b7280", marginBottom: 6, letterSpacing: 1 } }, "PHASE"),
+      React.createElement("div", { style: { display: "flex", gap: 8 } },
+        phaseLabels.map(function(l, i) {
+          return React.createElement("button", { key: i, onClick: function() { setPhase(i); setChecked({}); }, style: { flex: 1, padding: "9px 4px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, background: phase === i ? "#7c3aed" : "#1a0030", color: phase === i ? "white" : "#9ca3af", boxShadow: phase === i ? "0 2px 8px rgba(124,58,237,0.4)" : "none" } }, l);
+        })
+      )
+    ),
+
+    React.createElement("div", { style: { background: "#1a0030", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#a78bfa", marginBottom: 16, fontWeight: 600 } },
+      tab === "daily"
+        ? "🌙 Daily · 15-20 min · Do this every day, even rest days"
+        : "✨ Deep Friday · 30-40 min · Where real flexibility is built"
+    ),
+
+    exercises.map(function(ex, i) {
+      var key = tab + "-" + phase + "-" + i;
+      var isDone = !!checked[key];
+      return React.createElement("div", { key: i, onClick: function() { toggle(key); },
+        style: { background: isDone ? "#0f1f0f" : "#1a0030", border: "2px solid " + (isDone ? "#166534" : "#3b0764"), borderRadius: 12, padding: "14px 16px", marginBottom: 12, cursor: "pointer" } },
+
+        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 } },
+          React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+            React.createElement("span", { style: { fontSize: 20 } }, ex.emoji),
+            React.createElement("div", null,
+              React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: isDone ? "#4ade80" : "white" } }, (isDone ? "✅ " : "") + ex.name),
+              React.createElement("div", { style: { fontSize: 11, color: "#7c3aed", fontWeight: 600, marginTop: 2 } }, ex.area)
+            )
+          ),
+          React.createElement("div", { style: { fontSize: 11, color: "#6b7280", textAlign: "right" } },
+            ex.sets + " sets",
+            React.createElement("br"),
+            React.createElement("span", { style: { color: "#c084fc", fontWeight: 700 } }, ex.holds[phase])
+          )
+        ),
+
+        React.createElement("div", { style: { fontSize: 12, color: "#9ca3af", lineHeight: 1.5, marginBottom: 8 } }, ex.notes),
+
+        React.createElement("div", { style: { background: "#0a0010", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "#c084fc", fontStyle: "italic" } },
+          "💡 " + ex.tip
+        )
+      );
+    }),
+
+    React.createElement("div", { style: { marginTop: 20, background: "#1a0030", borderRadius: 10, padding: "14px 16px", fontSize: 12, color: "#c084fc", fontWeight: 600, textAlign: "center", border: "1px solid #3b0764" } },
+      "🌸 Flexibility is built in the quiet moments. Show up daily and your body will open."
+    )
+  );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById("root"));
+</script>
+</body>
+</html>
