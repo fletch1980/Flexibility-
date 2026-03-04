@@ -19,6 +19,10 @@
 var useState = React.useState;
 var phaseLabels = ["Weeks 1-4", "Weeks 5-8", "Weeks 9-12"];
 
+function getInitialTab() {
+  return new Date().getDay() === 5 ? "friday" : "daily";
+}
+
 var dailyRoutine = [
   {
     name: "Hip Flexor Lunge Stretch", area: "Hip Flexors", emoji: "🔥",
@@ -145,7 +149,7 @@ var fridaySession = [
 ];
 
 function App() {
-  var stateTab = useState("daily");
+  var stateTab = useState(getInitialTab);
   var tab = stateTab[0]; var setTab = stateTab[1];
   var statePhase = useState(0);
   var phase = statePhase[0]; var setPhase = statePhase[1];
