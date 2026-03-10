@@ -44,6 +44,8 @@
     .hist-day-header:active{opacity:0.8;}
     .hist-day-title{font-size:13px;font-weight:800;color:#c084fc;}
     .hist-day-toggle{font-size:11px;color:#a78bfa;font-weight:700;}
+    .week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;}
+    .week-btn{padding:8px 4px;border-radius:8px;border:1px solid #3b0764;cursor:pointer;font-size:11px;font-weight:700;text-align:center;transition:all 0.2s;}
   </style>
 </head>
 <body>
@@ -51,8 +53,6 @@
 <script>
 var useState = React.useState;
 var useEffect = React.useEffect;
-
-var phaseLabels = ["Weeks 1-4","Weeks 5-8","Weeks 9-12"];
 
 function todayStr(){var n=new Date(),y=n.getFullYear(),mo=n.getMonth()+1,d=n.getDate();return y+'-'+(mo<10?'0'+mo:mo)+'-'+(d<10?'0'+d:d);}
 function friendlyDate(iso){return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
@@ -68,27 +68,100 @@ function safeKeys(prefix){
   return keys;
 }
 
+function getPhaseIdx(w){return w<=4?0:w<=8?1:2;}
+function getPhaseLabel(w){return w<=4?'Foundation':w<=8?'Build':'Peak';}
+function getPhaseColor(w){return w<=4?'#7c3aed':w<=8?'#059669':'#db2777';}
+
+// holds[0]=Wks1-4, holds[1]=Wks5-8, holds[2]=Wks9-12
 var dailyRoutine = [
-  {name:"Hip Flexor Lunge Stretch",area:"Hip Flexors",emoji:"🔥",holds:["45 sec each side","60 sec each side","90 sec each side"],sets:2,notes:"Low lunge, back knee on floor, sink hips forward and down. Keep chest tall.",tip:"Reach opposite arm overhead for deeper stretch",howto:["Start in a lunge with your right foot forward, right knee over ankle","Lower your left knee to the floor, place a towel under it if needed","Sink your hips forward and down toward the floor","Keep your chest tall and core lightly engaged","You should feel a deep stretch in the front of your left hip","Hold, breathe deeply, then switch sides"]},
-  {name:"Deep Butterfly",area:"Inner Thighs & Groin",emoji:"🦋",holds:["45 sec","60 sec","90 sec"],sets:2,notes:"Seated, feet together, press knees toward floor with elbows. Sit tall.",tip:"Weeks 5+: lean forward from hips for deeper groin opening",howto:["Sit on the floor and bring the soles of your feet together","Let your knees fall out to the sides","Hold your feet with both hands","Place your elbows on your inner thighs and gently press down","Sit tall — do not round your lower back","Hold and breathe, letting your knees sink lower with each exhale"]},
-  {name:"Pigeon Pose",area:"Hip External Rotation",emoji:"🕊️",holds:["60 sec each side","90 sec each side","2 min each side"],sets:2,notes:"Front shin as parallel to top of mat as possible. Hips square to floor.",tip:"Never skip this one — it is the most impactful hip opener",howto:["Start on all fours, bring your right knee forward toward your right wrist","Slide your right foot toward your left wrist — shin diagonal on the floor","Extend your left leg straight back behind you","Square your hips toward the floor as much as possible","Lower your upper body down over your front leg, resting on forearms or forehead","Breathe deeply into the tightness — do not fight it","Switch sides after your hold"]},
-  {name:"Supine Figure 4",area:"Hip External Rotation",emoji:"4️⃣",holds:["45 sec each side","60 sec each side","90 sec each side"],sets:2,notes:"On your back, cross ankle over opposite knee, pull both legs toward chest.",tip:"Flex the foot of the crossed leg to protect your knee",howto:["Lie on your back with knees bent, feet flat on floor","Cross your right ankle over your left knee — foot flexed","Thread your right hand through the gap between your legs","Interlace fingers behind your left thigh","Pull both legs gently toward your chest","You will feel a deep stretch in your right glute and outer hip","Hold then switch sides"]},
-  {name:"Wide Leg Forward Fold",area:"Inner Thighs & Hamstrings",emoji:"🌊",holds:["45 sec","60 sec","90 sec"],sets:2,notes:"Seated, legs wide, walk hands forward. Keep spine long — do not round.",tip:"Weeks 5+: try to get chest toward floor not just hands",howto:["Sit on the floor and open your legs as wide as comfortable","Flex your feet, toes pointing up","Sit tall and lengthen your spine","Walk your hands forward on the floor between your legs","Keep your back as flat as possible — do not round","Stop when you feel a stretch in your inner thighs and hamstrings","Hold and breathe, walking hands a little further each exhale"]},
-  {name:"Lizard Pose",area:"Hip Flexors & Groin",emoji:"🦎",holds:["45 sec each side","60 sec each side","90 sec each side"],sets:2,notes:"Deep lunge with both hands inside front foot. Drop back knee to floor.",tip:"Weeks 9+: drop forearms to floor for maximum depth",howto:["Start in a lunge with your right foot forward","Place both hands on the floor inside your right foot","Lower your left knee to the floor","Sink your hips low, keeping your right knee over your ankle","You should feel a deep stretch in both hips","For deeper stretch: lower your forearms to the floor or a block","Hold then switch sides"]},
-  {name:"Supine Spinal Twist",area:"Lower Back Mobility",emoji:"🌀",holds:["30 sec each side","45 sec each side","60 sec each side"],sets:2,notes:"On back, drop knees to one side while arms extend out. Keep shoulders flat.",tip:"Each exhale lets you sink a little deeper",howto:["Lie on your back with knees bent","Extend your arms out to the sides like a T","Let both knees fall slowly to the right side","Keep your shoulders pressed flat on the floor","Turn your head to the left if comfortable","You should feel a gentle twist through your lower back and spine","Hold, then bring knees back to center and switch sides"]},
-  {name:"Deep Squat Hold",area:"Hip Flexors & Groin",emoji:"⬇️",holds:["45 sec","60 sec","90 sec"],sets:3,notes:"Feet slightly wider than hips, toes turned out. Press knees out with elbows.",tip:"Hold a door frame if heels won't stay flat — work toward flat heels over 12 weeks",howto:["Stand with feet slightly wider than shoulder width, toes turned out 45 degrees","Slowly lower into a deep squat, bringing hips below knee level","Place your elbows on the inside of your knees and press them outward","Keep your chest tall and spine neutral","Press heels into the floor — hold a door frame if needed for balance","Breathe and hold — this opens hips, groin, and ankles simultaneously"]}
+  {name:"Hip Flexor Lunge Stretch",area:"Hip Flexors",emoji:"🔥",
+    holds:["45 sec each side","60 sec each side","90 sec each side"],sets:2,
+    notes:"Low lunge, back knee on floor, sink hips forward and down. Keep chest tall.",
+    tip:"Reach opposite arm overhead for a deeper stretch.",
+    howto:["Start in a lunge with your right foot forward, right knee over ankle","Lower your left knee to the floor, place a towel under it if needed","Sink your hips forward and down toward the floor","Keep your chest tall and core lightly engaged","You should feel a deep stretch in the front of your left hip","Hold, breathe deeply, then switch sides"]},
+  {name:"Deep Butterfly",area:"Inner Thighs & Groin",emoji:"🦋",
+    holds:["45 sec","60 sec","90 sec"],sets:2,
+    notes:"Seated, feet together, press knees toward floor with elbows. Sit tall.",
+    tip:"Weeks 5+: lean forward from hips for deeper groin opening.",
+    howto:["Sit on the floor and bring the soles of your feet together","Let your knees fall out to the sides","Hold your feet with both hands","Place your elbows on your inner thighs and gently press down","Sit tall — do not round your lower back","Hold and breathe, letting your knees sink lower with each exhale"]},
+  {name:"Pigeon Pose",area:"Hip External Rotation",emoji:"🕊️",
+    holds:["60 sec each side","90 sec each side","2 min each side"],sets:2,
+    notes:"Front shin as parallel to top of mat as possible. Hips square to floor.",
+    tip:"Never skip this one — it is the most impactful hip opener.",
+    howto:["Start on all fours, bring your right knee forward toward your right wrist","Slide your right foot toward your left wrist — shin diagonal on the floor","Extend your left leg straight back behind you","Square your hips toward the floor as much as possible","Lower your upper body down over your front leg, resting on forearms or forehead","Breathe deeply into the tightness — do not fight it","Switch sides after your hold"]},
+  {name:"Supine Figure 4",area:"Hip External Rotation",emoji:"4️⃣",
+    holds:["45 sec each side","60 sec each side","90 sec each side"],sets:2,
+    notes:"On your back, cross ankle over opposite knee, pull both legs toward chest.",
+    tip:"Flex the foot of the crossed leg to protect your knee.",
+    howto:["Lie on your back with knees bent, feet flat on floor","Cross your right ankle over your left knee — foot flexed","Thread your right hand through the gap between your legs","Interlace fingers behind your left thigh","Pull both legs gently toward your chest","You will feel a deep stretch in your right glute and outer hip","Hold then switch sides"]},
+  {name:"Wide Leg Forward Fold",area:"Inner Thighs & Hamstrings",emoji:"🌊",
+    holds:["45 sec","60 sec","90 sec"],sets:2,
+    notes:"Seated, legs wide, walk hands forward. Keep spine long — do not round.",
+    tip:"Weeks 5+: try to get chest toward floor, not just hands.",
+    howto:["Sit on the floor and open your legs as wide as comfortable","Flex your feet, toes pointing up","Sit tall and lengthen your spine","Walk your hands forward on the floor between your legs","Keep your back as flat as possible — do not round","Stop when you feel a stretch in your inner thighs and hamstrings","Hold and breathe, walking hands a little further each exhale"]},
+  {name:"Lizard Pose",area:"Hip Flexors & Groin",emoji:"🦎",
+    holds:["45 sec each side","60 sec each side","90 sec each side"],sets:2,
+    notes:"Deep lunge with both hands inside front foot. Drop back knee to floor.",
+    tip:"Weeks 9+: drop forearms to floor for maximum depth.",
+    howto:["Start in a lunge with your right foot forward","Place both hands on the floor inside your right foot","Lower your left knee to the floor","Sink your hips low, keeping your right knee over your ankle","You should feel a deep stretch in both hips","For deeper stretch: lower your forearms to the floor or a block","Hold then switch sides"]},
+  {name:"Supine Spinal Twist",area:"Lower Back Mobility",emoji:"🌀",
+    holds:["30 sec each side","45 sec each side","60 sec each side"],sets:2,
+    notes:"On back, drop knees to one side while arms extend out. Keep shoulders flat.",
+    tip:"Each exhale lets you sink a little deeper.",
+    howto:["Lie on your back with knees bent","Extend your arms out to the sides like a T","Let both knees fall slowly to the right side","Keep your shoulders pressed flat on the floor","Turn your head to the left if comfortable","You should feel a gentle twist through your lower back and spine","Hold, then bring knees back to center and switch sides"]},
+  {name:"Deep Squat Hold",area:"Hip Flexors & Groin",emoji:"⬇️",
+    holds:["45 sec","60 sec","90 sec"],sets:3,
+    notes:"Feet slightly wider than hips, toes turned out. Press knees out with elbows.",
+    tip:"Hold a door frame if heels won't stay flat — work toward flat heels over 12 weeks.",
+    howto:["Stand with feet slightly wider than shoulder width, toes turned out 45 degrees","Slowly lower into a deep squat, bringing hips below knee level","Place your elbows on the inside of your knees and press them outward","Keep your chest tall and spine neutral","Press heels into the floor — hold a door frame if needed for balance","Breathe and hold — this opens hips, groin, and ankles simultaneously"]}
 ];
 
 var fridaySession = [
-  {name:"Hip Circle Warm Up",area:"Full Hip Mobility",emoji:"🌀",holds:["10 circles each direction","15 circles each direction","20 circles each direction"],sets:2,notes:"Standing, hands on hips, make big slow circles. Primes everything for deep work.",tip:"Make them as large as possible",howto:["Stand with feet hip width apart, hands on hips","Begin making large slow circles with your hips","Go clockwise first — as big and slow as possible","Keep your upper body relatively still, all movement from the hips","Complete your reps then switch to counterclockwise","This should feel good — it is a warm up not a stretch"]},
-  {name:"Extended Pigeon Pose",area:"Hip External Rotation",emoji:"🕊️",holds:["2 min each side","2.5 min each side","3 min each side"],sets:2,notes:"Longer hold than daily. Get comfortable being uncomfortable.",tip:"Use a folded blanket under your hip if it does not reach the floor",howto:["Same setup as daily pigeon pose","Right knee forward toward right wrist, left leg extended back","Square hips to floor and lower upper body down","Rest forehead on stacked fists or forearms","This is a longer hold — set a timer and commit to it","Breathe slowly and deeply the entire time","Each minute you will feel the hip release a little more"]},
-  {name:"Frog Pose",area:"Inner Thighs & Groin",emoji:"🐸",holds:["60 sec","90 sec","2 min"],sets:2,notes:"On all fours, slide knees apart as wide as comfortable, sink hips toward floor.",tip:"Breathe through it — the discomfort means it is working",howto:["Start on all fours on a soft surface","Slowly slide your knees apart as wide as comfortable","Keep your ankles in line with your knees — feet turned out","Lower your hips toward the floor between your knees","Rest on your forearms for support","You will feel an intense inner thigh and groin stretch","Hold and breathe — this is one of the deepest groin openers available"]},
-  {name:"Active Hip Flexor Stretch",area:"Hip Flexors — Active",emoji:"💪",holds:["10 reps each side","12 reps each side","15 reps each side"],sets:3,notes:"Low lunge — squeeze glute of back leg and tuck pelvis. Hold 3 sec, release, repeat.",tip:"Active flexibility means you can control the position — this translates to real life",howto:["Get into a low lunge with right foot forward, left knee on floor","Place hands on your right knee for balance","Squeeze your LEFT glute hard and tuck your pelvis slightly under","You will feel the hip flexor stretch deepen","Hold the squeeze for 3 seconds","Release, then squeeze again","This trains your muscle to be strong in the stretched position — not just passive"]},
-  {name:"Straddle Forward Fold",area:"Inner Thighs & Hamstrings",emoji:"🌊",holds:["90 sec","2 min","2.5 min"],sets:2,notes:"Legs as wide as possible, walk hands forward slowly. Let gravity do the work.",tip:"Weeks 9+: point and flex feet alternately while holding",howto:["Sit on the floor and open your legs as wide as they will go comfortably","Flex your feet and sit tall","Begin walking your hands slowly forward between your legs","Keep your spine as long as possible","Do not force — let gravity and time do the work","The goal over 12 weeks is to get your chest toward the floor","Breathe and relax into it — tension fights the stretch"]},
-  {name:"Bridge Spine Wave",area:"Lower Back Mobility",emoji:"🌉",holds:["10 slow reps","12 slow reps","15 slow reps"],sets:3,notes:"Slowly peel spine off floor vertebra by vertebra into bridge, then roll back down.",tip:"Do this slowly — feel each vertebra. This directly trains fluid spinal movement.",howto:["Lie on your back, knees bent, feet flat on floor hip width apart","Press your lower back into the floor first","Slowly peel your tailbone up, then each vertebra one at a time","Rise into a full bridge with hips lifted high","Pause at the top, squeeze glutes","Slowly roll back down starting from your upper back","Each vertebra touches the floor one at a time on the way down","This is not fast — the slower the better"]},
-  {name:"Seated Figure 4 Forward Fold",area:"Hip External Rotation — Deep",emoji:"4️⃣",holds:["60 sec each side","90 sec each side","2 min each side"],sets:2,notes:"Seated, cross ankle over knee in figure 4, then fold forward over the crossed leg.",tip:"Keep spine long as you fold — more effective than rounding your back",howto:["Sit on the floor with legs extended forward","Bend your right knee and cross your right ankle over your left thigh","Flex your right foot to protect your knee","Sit tall and begin to fold forward from your hips over your crossed leg","Walk your hands forward on either side of your left leg","You will feel a very deep stretch in your right glute and outer hip","Hold then switch sides"]},
-  {name:"Happy Baby Pose",area:"Inner Thighs & Lower Back",emoji:"👶",holds:["60 sec","90 sec","2 min"],sets:2,notes:"On back, grab outside edges of feet, knees toward armpits. Rock side to side.",tip:"This is your reward pose — let your lower back melt into the floor",howto:["Lie on your back","Bend both knees toward your chest","Reach up and grab the outside edges of both feet","Open your knees wider than your torso","Gently pull your feet down while pressing your lower back into the floor","Rock slowly from side to side to massage your lower back","This should feel wonderful — enjoy it"]},
-  {name:"Full Hip Wind Flow",area:"Integration",emoji:"✨",holds:["3 minutes","4 minutes","5 minutes"],sets:1,notes:"Put on music. Move through everything — circles, figure 8s, hip winds, deep squats.",tip:"No rules here. Feel your body and enjoy what it can do.",howto:["Put on a playlist you love","Start with big hip circles standing","Flow into figure 8s","Drop into a deep squat and wind your hips","Get on your knees and do slow hip winds","Stand and do booty pops and hip isolations","There is no wrong way — just move and enjoy your body","This is where everything you have been training comes together"]}
+  {name:"Hip Circle Warm Up",area:"Full Hip Mobility",emoji:"🌀",
+    holds:["10 circles each dir","15 circles each dir","20 circles each dir"],sets:2,
+    notes:"Standing, hands on hips, make big slow circles. Primes everything for deep work.",
+    tip:"Make them as large as possible.",
+    howto:["Stand with feet hip width apart, hands on hips","Begin making large slow circles with your hips","Go clockwise first — as big and slow as possible","Keep your upper body relatively still, all movement from the hips","Complete your reps then switch to counterclockwise","This should feel good — it is a warm up not a stretch"]},
+  {name:"Extended Pigeon Pose",area:"Hip External Rotation",emoji:"🕊️",
+    holds:["2 min each side","2.5 min each side","3 min each side"],sets:2,
+    notes:"Longer hold than daily. Get comfortable being uncomfortable.",
+    tip:"Use a folded blanket under your hip if it does not reach the floor.",
+    howto:["Same setup as daily pigeon pose","Right knee forward toward right wrist, left leg extended back","Square hips to floor and lower upper body down","Rest forehead on stacked fists or forearms","This is a longer hold — set a timer and commit to it","Breathe slowly and deeply the entire time","Each minute you will feel the hip release a little more"]},
+  {name:"Frog Pose",area:"Inner Thighs & Groin",emoji:"🐸",
+    holds:["60 sec","90 sec","2 min"],sets:2,
+    notes:"On all fours, slide knees apart as wide as comfortable, sink hips toward floor.",
+    tip:"Breathe through it — the discomfort means it is working.",
+    howto:["Start on all fours on a soft surface","Slowly slide your knees apart as wide as comfortable","Keep your ankles in line with your knees — feet turned out","Lower your hips toward the floor between your knees","Rest on your forearms for support","You will feel an intense inner thigh and groin stretch","Hold and breathe — this is one of the deepest groin openers available"]},
+  {name:"Active Hip Flexor Stretch",area:"Hip Flexors — Active",emoji:"💪",
+    holds:["10 reps each side","12 reps each side","15 reps each side"],sets:3,
+    notes:"Low lunge — squeeze glute of back leg and tuck pelvis. Hold 3 sec, release, repeat.",
+    tip:"Active flexibility means you can control the position — this translates to real life.",
+    howto:["Get into a low lunge with right foot forward, left knee on floor","Place hands on your right knee for balance","Squeeze your LEFT glute hard and tuck your pelvis slightly under","You will feel the hip flexor stretch deepen","Hold the squeeze for 3 seconds","Release, then squeeze again","This trains your muscle to be strong in the stretched position — not just passive"]},
+  {name:"Straddle Forward Fold",area:"Inner Thighs & Hamstrings",emoji:"🌊",
+    holds:["90 sec","2 min","2.5 min"],sets:2,
+    notes:"Legs as wide as possible, walk hands forward slowly. Let gravity do the work.",
+    tip:"Weeks 9+: point and flex feet alternately while holding.",
+    howto:["Sit on the floor and open your legs as wide as they will go comfortably","Flex your feet and sit tall","Begin walking your hands slowly forward between your legs","Keep your spine as long as possible","Do not force — let gravity and time do the work","The goal over 12 weeks is to get your chest toward the floor","Breathe and relax into it — tension fights the stretch"]},
+  {name:"Bridge Spine Wave",area:"Lower Back Mobility",emoji:"🌉",
+    holds:["10 slow reps","12 slow reps","15 slow reps"],sets:3,
+    notes:"Slowly peel spine off floor vertebra by vertebra into bridge, then roll back down.",
+    tip:"Do this slowly — feel each vertebra. This directly trains fluid spinal movement.",
+    howto:["Lie on your back, knees bent, feet flat on floor hip width apart","Press your lower back into the floor first","Slowly peel your tailbone up, then each vertebra one at a time","Rise into a full bridge with hips lifted high","Pause at the top, squeeze glutes","Slowly roll back down starting from your upper back","Each vertebra touches the floor one at a time on the way down","This is not fast — the slower the better"]},
+  {name:"Seated Figure 4 Forward Fold",area:"Hip External Rotation — Deep",emoji:"4️⃣",
+    holds:["60 sec each side","90 sec each side","2 min each side"],sets:2,
+    notes:"Seated, cross ankle over knee in figure 4, then fold forward over the crossed leg.",
+    tip:"Keep spine long as you fold — more effective than rounding your back.",
+    howto:["Sit on the floor with legs extended forward","Bend your right knee and cross your right ankle over your left thigh","Flex your right foot to protect your knee","Sit tall and begin to fold forward from your hips over your crossed leg","Walk your hands forward on either side of your left leg","You will feel a very deep stretch in your right glute and outer hip","Hold then switch sides"]},
+  {name:"Happy Baby Pose",area:"Inner Thighs & Lower Back",emoji:"👶",
+    holds:["60 sec","90 sec","2 min"],sets:2,
+    notes:"On back, grab outside edges of feet, knees toward armpits. Rock side to side.",
+    tip:"This is your reward pose — let your lower back melt into the floor.",
+    howto:["Lie on your back","Bend both knees toward your chest","Reach up and grab the outside edges of both feet","Open your knees wider than your torso","Gently pull your feet down while pressing your lower back into the floor","Rock slowly from side to side to massage your lower back","This should feel wonderful — enjoy it"]},
+  {name:"Full Hip Wind Flow",area:"Integration",emoji:"✨",
+    holds:["3 minutes","4 minutes","5 minutes"],sets:1,
+    notes:"Put on music. Move through everything — circles, figure 8s, hip winds, deep squats.",
+    tip:"No rules here. Feel your body and enjoy what it can do.",
+    howto:["Put on a playlist you love","Start with big hip circles standing","Flow into figure 8s","Drop into a deep squat and wind your hips","Get on your knees and do slow hip winds","Stand and do booty pops and hip isolations","There is no wrong way — just move and enjoy your body","This is where everything you have been training comes together"]}
 ];
 
 // ── CALENDAR PICKER ───────────────────────────────────────────
@@ -125,7 +198,7 @@ function CalendarPicker(props) {
   );
 }
 
-// ── PER-SET LOG FORM ──────────────────────────────────────────
+// ── LOG FORM ──────────────────────────────────────────────────
 function LogForm(props) {
   var numSets=props.sets||2;
   function makeRow(){return{hold:'',note:''};}
@@ -133,11 +206,9 @@ function LogForm(props) {
   for(var i=0;i<numSets;i++) initRows.push(makeRow());
   var rw=useState(initRows),rows=rw[0],setRows=rw[1];
   var sv=useState(false),saving=sv[0],setSaving=sv[1];
-
   function updateRow(idx,field,val){setRows(function(prev){var next=prev.map(function(r){return Object.assign({},r);});next[idx][field]=val;return next;});}
   function addRow(){setRows(function(prev){return prev.concat(makeRow());});}
   function removeRow(idx){setRows(function(prev){if(prev.length<=1)return prev;return prev.filter(function(_,i){return i!==idx;});});}
-
   function submit(){
     var filled=rows.filter(function(r){return r.hold||r.note;});
     if(!filled.length) return;
@@ -151,7 +222,6 @@ function LogForm(props) {
     var reset=[];for(var i=0;i<numSets;i++)reset.push(makeRow());
     setRows(reset);setSaving(false);props.onSaved();
   }
-
   return React.createElement('div',{style:{background:'#0a0010',border:'1px solid #3b0764',borderRadius:10,padding:12,marginTop:8}},
     React.createElement('div',{style:{fontSize:11,color:'#c084fc',fontWeight:700,marginBottom:10}},'📝 Log This Exercise'),
     React.createElement('div',{style:{display:'grid',gridTemplateColumns:'28px 1fr 1fr 24px',gap:5,marginBottom:4}},
@@ -174,12 +244,11 @@ function LogForm(props) {
   );
 }
 
-// ── HISTORY VIEW ─────────────────────────────────────────────
+// ── HISTORY VIEW ──────────────────────────────────────────────
 function HistoryView() {
   var d=useState(null),setData=d[1];d=d[0];
   var rf=useState(0),setRf=rf[1];rf=rf[0];
   var op=useState({}),openDates=op[0],setOpenDates=op[1];
-
   useEffect(function(){
     var keys=safeKeys('flex_');
     var byDate={};
@@ -192,30 +261,25 @@ function HistoryView() {
     });
     setData(byDate);
   },[rf]);
-
   function toggleDate(date){setOpenDates(function(prev){var n=Object.assign({},prev);n[date]=!prev[date];return n;});}
-
   function delEntry(key,idx){
     var entries=JSON.parse(safeGet(key)||'[]');
     entries.splice(idx,1);
     if(entries.length){safeSet(key,JSON.stringify(entries));}else{safeRemove(key);}
     setRf(function(x){return x+1;});
   }
-
   if(!d) return React.createElement('div',{style:{textAlign:'center',color:'#9ca3af',fontSize:13,padding:'20px 0'}},'Loading...');
   if(!Object.keys(d).length) return React.createElement('div',{style:{textAlign:'center',color:'#6b7280',fontSize:13,padding:'30px 0'}},'No logs yet. Tap 📝 Log on any exercise to start tracking!');
-
   var dates=Object.keys(d).sort(function(a,b){return b.localeCompare(a);});
   return React.createElement('div',null,
     dates.map(function(date){
       var exs=d[date];
-      var friendly=friendlyDate(date);
       var isOpen=!!openDates[date];
       var totalSets=Object.values(exs).reduce(function(sum,entries){return sum+entries.length;},0);
       return React.createElement('div',{key:date,style:{background:'#1a0030',border:'1px solid #3b0764',borderRadius:12,marginBottom:10,overflow:'hidden'}},
         React.createElement('div',{className:'hist-day-header',onClick:function(){toggleDate(date);}},
           React.createElement('div',null,
-            React.createElement('div',{className:'hist-day-title'},'📅 '+friendly),
+            React.createElement('div',{className:'hist-day-title'},'📅 '+friendlyDate(date)),
             React.createElement('div',{style:{fontSize:10,color:'#6b7280',marginTop:2}},Object.keys(exs).length+' exercise'+(Object.keys(exs).length!==1?'s':'')+' · '+totalSets+' set'+(totalSets!==1?'s':''))
           ),
           React.createElement('div',{className:'hist-day-toggle'},isOpen?'▲ Hide':'▼ Show')
@@ -252,7 +316,6 @@ function HistoryView() {
 // ── APP ───────────────────────────────────────────────────────
 function App() {
   var stateTab=useState(getInitialTab),tab=stateTab[0],setTab=stateTab[1];
-  var statePhase=useState(0),phase=statePhase[0],setPhase=statePhase[1];
   var stateChecked=useState({}),checked=stateChecked[0],setChecked=stateChecked[1];
   var stateExpanded=useState({}),expanded=stateExpanded[0],setExpanded=stateExpanded[1];
   var lgState=useState({}),logOpen=lgState[0],setLogOpen=lgState[1];
@@ -261,9 +324,17 @@ function App() {
   var ld=useState(todayStr()),logDate=ld[0],setLogDate=ld[1];
   var sc=useState(false),showCal=sc[0],setShowCal=sc[1];
 
+  // Week selector — persists across sessions
+  var savedWeek=parseInt(safeGet('flex_week')||'1')||1;
+  var sw=useState(savedWeek),week=sw[0],setWeekRaw=sw[1];
+  function setWeek(w){setWeekRaw(w);safeSet('flex_week',String(w));setChecked({});}
+
+  var phaseIdx=getPhaseIdx(week);
+  var phaseColor=getPhaseColor(week);
+  var phaseLabel=getPhaseLabel(week);
   var isLog=mainTab==='log';
   var exercises=tab==="daily"?dailyRoutine:fridaySession;
-  var done=exercises.filter(function(_,i){return!!checked[tab+"-"+phase+"-"+i];}).length;
+  var done=exercises.filter(function(_,i){return!!checked[tab+"-"+week+"-"+i];}).length;
   var total=exercises.length;
   var pct=(done/total)*100;
   var isToday=logDate===todayStr();
@@ -276,22 +347,44 @@ function App() {
 
     React.createElement('a',{href:'https://fletch1980.github.io/Complete_goddess/',className:'back-btn'},'👑 Home'),
 
+    // Header
     React.createElement("div",{style:{background:"linear-gradient(135deg,#4a0080,#7c3aed)",borderRadius:14,padding:"18px 20px",color:"white",marginBottom:16}},
       React.createElement("div",{style:{fontSize:22,fontWeight:800}},"🌸 Flexibility Training"),
       React.createElement("div",{style:{fontSize:13,opacity:0.9,marginTop:2}},"Open · Flow · Feel Everything"),
+      React.createElement("div",{style:{display:'flex',alignItems:'center',gap:8,marginTop:8}},
+        React.createElement('span',{style:{background:phaseColor,color:'white',borderRadius:20,padding:'3px 12px',fontSize:11,fontWeight:800}},'Week '+week+' · '+phaseLabel)
+      ),
       !isLog&&React.createElement("div",null,
         React.createElement("div",{style:{marginTop:10,background:"rgba(255,255,255,0.25)",borderRadius:8,height:8}},
           React.createElement("div",{style:{background:"white",borderRadius:8,height:8,width:pct+"%",transition:"width 0.3s"}})
         ),
-        React.createElement("div",{style:{fontSize:12,opacity:0.85,marginTop:4}},done+" of "+total+" complete")
+        React.createElement("div",{style:{fontSize:12,opacity:0.85,marginTop:4}},done+" of "+total+" complete"+(done===total?" 🌸 DONE!":""))
       )
     ),
 
+    // Main tab switcher
     React.createElement("div",{style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:12,gap:4}},
       React.createElement("button",{onClick:function(){setMainTab('workout');},style:{flex:1,padding:"9px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:!isLog?"#7c3aed":"transparent",color:!isLog?"white":"#9ca3af"}},"🌸 Workout"),
       React.createElement("button",{onClick:function(){setMainTab('log');setHistRefresh(function(x){return x+1;});},style:{flex:1,padding:"9px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:isLog?"#7c3aed":"transparent",color:isLog?"white":"#9ca3af"}},"📅 Log History")
     ),
 
+    // Week selector (workout tab only)
+    !isLog&&React.createElement('div',{style:{marginBottom:14}},
+      React.createElement('div',{style:{fontSize:11,color:'#6b7280',fontWeight:700,marginBottom:8,letterSpacing:1}},'SELECT WEEK'),
+      React.createElement('div',{className:'week-grid'},
+        [1,2,3,4,5,6,7,8,9,10,11,12].map(function(w){
+          var pc=getPhaseColor(w);
+          var isCur=w===week;
+          return React.createElement('button',{key:w,className:'week-btn',onClick:function(){setWeek(w);},
+            style:{background:isCur?pc:'#0a0010',color:isCur?'white':pc,borderColor:pc}},
+            React.createElement('div',null,'Wk '+w),
+            React.createElement('div',{style:{fontSize:9,opacity:0.8}},getPhaseLabel(w).slice(0,3).toUpperCase())
+          );
+        })
+      )
+    ),
+
+    // Date bar (workout tab only)
     !isLog&&React.createElement('div',null,
       React.createElement('div',{className:'active-date-bar'},
         React.createElement('span',null,'📅 Logging for: ',React.createElement('strong',null,isToday?'Today ('+friendlyDate(logDate)+')':friendlyDate(logDate))),
@@ -306,18 +399,11 @@ function App() {
     isLog&&React.createElement(HistoryView,{key:histRefresh}),
 
     !isLog&&React.createElement("div",null,
-      React.createElement("div",{style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:16}},
-        React.createElement("button",{onClick:function(){setTab("daily");setChecked({});setExpanded({});},style:{flex:1,padding:9,borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="daily"?"#7c3aed":"transparent",color:tab==="daily"?"white":"#9ca3af"}},"🌙 Daily Routine"),
-        React.createElement("button",{onClick:function(){setTab("friday");setChecked({});setExpanded({});},style:{flex:1,padding:9,borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="friday"?"#7c3aed":"transparent",color:tab==="friday"?"white":"#9ca3af"}},"✨ Deep Friday")
-      ),
 
-      React.createElement("div",{style:{marginBottom:16}},
-        React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"#6b7280",marginBottom:6,letterSpacing:1}},"PHASE"),
-        React.createElement("div",{style:{display:"flex",gap:8}},
-          phaseLabels.map(function(l,i){
-            return React.createElement("button",{key:i,onClick:function(){setPhase(i);setChecked({});},style:{flex:1,padding:"9px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:phase===i?"#7c3aed":"#1a0030",color:phase===i?"white":"#9ca3af"}},l);
-          })
-        )
+      // Daily / Friday tabs
+      React.createElement("div",{style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:16}},
+        React.createElement("button",{onClick:function(){setTab("daily");setChecked({});setExpanded({});},style:{flex:1,padding:9,borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="daily"?phaseColor:"transparent",color:tab==="daily"?"white":"#9ca3af"}},"🌙 Daily Routine"),
+        React.createElement("button",{onClick:function(){setTab("friday");setChecked({});setExpanded({});},style:{flex:1,padding:9,borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="friday"?phaseColor:"transparent",color:tab==="friday"?"white":"#9ca3af"}},"✨ Deep Friday")
       ),
 
       React.createElement("div",{style:{background:"#1a0030",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#a78bfa",marginBottom:16,fontWeight:600}},
@@ -325,9 +411,9 @@ function App() {
       ),
 
       exercises.map(function(ex,i){
-        var checkKey=tab+"-"+phase+"-"+i;
-        var expandKey=tab+"-expand-"+i;
-        var logKey=tab+"-log-"+i;
+        var checkKey=tab+"-"+week+"-"+i;
+        var expandKey=tab+"-expand-"+week+"-"+i;
+        var logKey=tab+"-log-"+week+"-"+i;
         var isDone=!!checked[checkKey];
         var isExpanded=!!expanded[expandKey];
         var showLog=!!logOpen[logKey];
@@ -343,7 +429,7 @@ function App() {
             ),
             React.createElement("div",{style:{fontSize:11,color:"#6b7280",textAlign:"right"}},
               ex.sets+" sets",React.createElement("br"),
-              React.createElement("span",{style:{color:"#c084fc",fontWeight:700}},ex.holds[phase])
+              React.createElement("span",{style:{color:"#c084fc",fontWeight:700}},ex.holds[phaseIdx])
             )
           ),
           React.createElement("div",{style:{fontSize:12,color:"#9ca3af",lineHeight:1.5,marginBottom:8}},ex.notes),
@@ -365,7 +451,7 @@ function App() {
 
           showLog&&React.createElement(LogForm,{
             exName:ex.name, logDate:logDate,
-            sets:ex.sets, holdHint:ex.holds[phase],
+            sets:ex.sets, holdHint:ex.holds[phaseIdx],
             onSaved:function(){setHistRefresh(function(x){return x+1;});}
           })
         );
