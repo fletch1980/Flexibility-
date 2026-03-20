@@ -46,6 +46,8 @@
     .hist-day-toggle{font-size:11px;color:#a78bfa;font-weight:700;}
     .week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;}
     .week-btn{padding:8px 4px;border-radius:8px;border:1px solid #3b0764;cursor:pointer;font-size:11px;font-weight:700;text-align:center;transition:all 0.2s;}
+    .yt-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#ff0000;border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:8px 12px;cursor:pointer;margin-bottom:10px;text-decoration:none;}
+    .yt-btn:hover{background:#cc0000;}
   </style>
 </head>
 <body>
@@ -57,6 +59,7 @@ var useEffect = React.useEffect;
 function todayStr(){var n=new Date(),y=n.getFullYear(),mo=n.getMonth()+1,d=n.getDate();return y+'-'+(mo<10?'0'+mo:mo)+'-'+(d<10?'0'+d:d);}
 function friendlyDate(iso){return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
 function getInitialTab(){return new Date().getDay()===5?"friday":"daily";}
+function ytUrl(name){return 'https://www.youtube.com/results?search_query='+encodeURIComponent(name+' stretch how to');}
 
 function safeGet(k){try{return localStorage.getItem(k);}catch(e){try{return sessionStorage.getItem(k);}catch(e2){return null;}}}
 function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){try{sessionStorage.setItem(k,v);}catch(e2){}}}
@@ -72,7 +75,6 @@ function getPhaseIdx(w){return w<=4?0:w<=8?1:2;}
 function getPhaseLabel(w){return w<=4?'Foundation':w<=8?'Build':'Peak';}
 function getPhaseColor(w){return w<=4?'#7c3aed':w<=8?'#059669':'#db2777';}
 
-// holds[0]=Wks1-4, holds[1]=Wks5-8, holds[2]=Wks9-12
 var dailyRoutine = [
   {name:"Hip Flexor Lunge Stretch",area:"Hip Flexors",emoji:"🔥",
     holds:["45 sec each side","60 sec each side","90 sec each side"],sets:2,
@@ -164,7 +166,6 @@ var fridaySession = [
     howto:["Put on a playlist you love","Start with big hip circles standing","Flow into figure 8s","Drop into a deep squat and wind your hips","Get on your knees and do slow hip winds","Stand and do booty pops and hip isolations","There is no wrong way — just move and enjoy your body","This is where everything you have been training comes together"]}
 ];
 
-// ── CALENDAR PICKER ───────────────────────────────────────────
 function CalendarPicker(props) {
   var activeDate=props.activeDate, onSelect=props.onSelect;
   var todayISO=todayStr();
@@ -198,7 +199,6 @@ function CalendarPicker(props) {
   );
 }
 
-// ── LOG FORM ──────────────────────────────────────────────────
 function LogForm(props) {
   var numSets=props.sets||2;
   function makeRow(){return{hold:'',note:''};}
@@ -244,7 +244,6 @@ function LogForm(props) {
   );
 }
 
-// ── HISTORY VIEW ──────────────────────────────────────────────
 function HistoryView() {
   var d=useState(null),setData=d[1];d=d[0];
   var rf=useState(0),setRf=rf[1];rf=rf[0];
@@ -313,7 +312,6 @@ function HistoryView() {
   );
 }
 
-// ── APP ───────────────────────────────────────────────────────
 function App() {
   var stateTab=useState(getInitialTab),tab=stateTab[0],setTab=stateTab[1];
   var stateChecked=useState({}),checked=stateChecked[0],setChecked=stateChecked[1];
@@ -324,7 +322,6 @@ function App() {
   var ld=useState(todayStr()),logDate=ld[0],setLogDate=ld[1];
   var sc=useState(false),showCal=sc[0],setShowCal=sc[1];
 
-  // Week selector — persists across sessions
   var savedWeek=parseInt(safeGet('flex_week')||'1')||1;
   var sw=useState(savedWeek),week=sw[0],setWeekRaw=sw[1];
   function setWeek(w){setWeekRaw(w);safeSet('flex_week',String(w));setChecked({});}
@@ -347,7 +344,6 @@ function App() {
 
     React.createElement('a',{href:'https://fletch1980.github.io/Complete_goddess/',className:'back-btn'},'👑 Home'),
 
-    // Header
     React.createElement("div",{style:{background:"linear-gradient(135deg,#4a0080,#7c3aed)",borderRadius:14,padding:"18px 20px",color:"white",marginBottom:16}},
       React.createElement("div",{style:{fontSize:22,fontWeight:800}},"🌸 Flexibility Training"),
       React.createElement("div",{style:{fontSize:13,opacity:0.9,marginTop:2}},"Open · Flow · Feel Everything"),
@@ -362,13 +358,11 @@ function App() {
       )
     ),
 
-    // Main tab switcher
     React.createElement("div",{style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:12,gap:4}},
       React.createElement("button",{onClick:function(){setMainTab('workout');},style:{flex:1,padding:"9px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:!isLog?"#7c3aed":"transparent",color:!isLog?"white":"#9ca3af"}},"🌸 Workout"),
       React.createElement("button",{onClick:function(){setMainTab('log');setHistRefresh(function(x){return x+1;});},style:{flex:1,padding:"9px 4px",borderRadius:8,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,background:isLog?"#7c3aed":"transparent",color:isLog?"white":"#9ca3af"}},"📅 Log History")
     ),
 
-    // Week selector (workout tab only)
     !isLog&&React.createElement('div',{style:{marginBottom:14}},
       React.createElement('div',{style:{fontSize:11,color:'#6b7280',fontWeight:700,marginBottom:8,letterSpacing:1}},'SELECT WEEK'),
       React.createElement('div',{className:'week-grid'},
@@ -384,7 +378,6 @@ function App() {
       )
     ),
 
-    // Date bar (workout tab only)
     !isLog&&React.createElement('div',null,
       React.createElement('div',{className:'active-date-bar'},
         React.createElement('span',null,'📅 Logging for: ',React.createElement('strong',null,isToday?'Today ('+friendlyDate(logDate)+')':friendlyDate(logDate))),
@@ -400,7 +393,6 @@ function App() {
 
     !isLog&&React.createElement("div",null,
 
-      // Daily / Friday tabs
       React.createElement("div",{style:{display:"flex",background:"#1a0030",borderRadius:10,padding:4,marginBottom:16}},
         React.createElement("button",{onClick:function(){setTab("daily");setChecked({});setExpanded({});},style:{flex:1,padding:9,borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="daily"?phaseColor:"transparent",color:tab==="daily"?"white":"#9ca3af"}},"🌙 Daily Routine"),
         React.createElement("button",{onClick:function(){setTab("friday");setChecked({});setExpanded({});},style:{flex:1,padding:9,borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:700,background:tab==="friday"?phaseColor:"transparent",color:tab==="friday"?"white":"#9ca3af"}},"✨ Deep Friday")
@@ -434,6 +426,9 @@ function App() {
           ),
           React.createElement("div",{style:{fontSize:12,color:"#9ca3af",lineHeight:1.5,marginBottom:8}},ex.notes),
           React.createElement("div",{style:{background:"#0a0010",borderRadius:8,padding:"6px 10px",fontSize:11,color:"#c084fc",fontStyle:"italic",marginBottom:10}},"💡 "+ex.tip),
+
+          // YouTube button
+          React.createElement("a",{href:ytUrl(ex.name),target:"_blank",className:"yt-btn"},"▶ Watch Example on YouTube"),
 
           React.createElement("div",{style:{display:"flex",gap:8,marginBottom:8}},
             React.createElement("button",{onClick:function(){toggleExpand(expandKey);},style:{flex:1,background:isExpanded?"#3b0764":"#0a0010",border:"1px solid #3b0764",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#a78bfa",fontWeight:700,cursor:"pointer"}},isExpanded?"▲ Hide How To":"▼ How To"),
